@@ -1,0 +1,45 @@
+<!-- login.html (simplified) -->
+<form id="loginForm">
+  <input id="email" type="email" required />
+  <input id="password" type="password" required />
+  <button type="submit">Login</button>
+</form>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  // 1) Call login endpoint
+  const res = await fetch('http://localhost:5000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.msg || 'Login failed');
+    return;
+  }
+
+  // 2) Save token (or use cookie). localStorage for demo:
+  localStorage.setItem('token', data.token);
+
+  // 3) If backend returned user info, you already have it:
+  if (data.user) {
+    console.log('Logged in user:', data.user); // name + email
+    // show on UI
+    document.body.insertAdjacentHTML('afterbegin',
+      `<p>Welcome, ${data.user.name} (${data.user.email})</p>`);
+  } else {
+    // If login response didn't include user, fetch profile:
+    const profileRes = await fetch('http://localhost:5000/api/users', {
+      headers: { Authorization: `Bearer ${data.token}` }
+    });
+    const profile = await profileRes.json();
+    console.log('Profile from /api/users:', profile);
+  }
+});
+</script>
